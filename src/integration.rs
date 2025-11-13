@@ -183,6 +183,11 @@ impl Gui {
         self.egui_ctx.begin_pass(raw_input);
     }
 
+    /// Get the list of attachments for use with the the framebuffer
+    pub fn get_attachments(&mut self) -> &mut Vec<Arc<ImageView>> {
+        self.renderer.get_attachments()
+    }
+
     /// Renders ui on `final_image` & Updates cursor icon
     /// Finishes Egui frame
     /// - `before_future` = Vulkano's GpuFuture

@@ -106,6 +106,8 @@ pub struct Renderer {
     texture_desc_sets: AHashMap<egui::TextureId, Arc<DescriptorSet>>,
     texture_images: AHashMap<egui::TextureId, Arc<ImageView>>,
     next_native_tex_id: u64,
+
+    framebuffer_attachments: Vec<Arc<ImageView>>,
 }
 
 impl Renderer {
@@ -207,6 +209,7 @@ impl Renderer {
             font_sampler,
             font_format,
             allocators,
+            framebuffer_attachments: Vec::new(),
         }
     }
 
@@ -603,6 +606,11 @@ impl Renderer {
         .unwrap()
     }
 
+    /// Get the list of attachments for use with the the framebuffer
+    pub fn get_attachments(&mut self) -> &mut Vec<Arc<ImageView>> {
+        &mut self.framebuffer_attachments
+    }
+
     // Starts the rendering pipeline and returns [`RecordingCommandBuffer`] for drawing
     fn start(
         &mut self,
@@ -610,6 +618,8 @@ impl Renderer {
     ) -> (AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>, [u32; 2]) {
         // Get dimensions
         let img_dims = final_image.image().extent();
+        let mut attachments = self.framebuffer_attachments.clone();
+        attachments.push(final_image);
         // Create framebuffer (must be in same order as render pass description in `new`
         let framebuffer = Framebuffer::new(
             self.render_pass
@@ -619,7 +629,7 @@ impl Renderer {
                      instead",
                 )
                 .clone(),
-            FramebufferCreateInfo { attachments: vec![final_image], ..Default::default() },
+            FramebufferCreateInfo { attachments, ..Default::default() },
         )
         .unwrap();
         let mut command_buffer_builder = AutoCommandBufferBuilder::primary(
